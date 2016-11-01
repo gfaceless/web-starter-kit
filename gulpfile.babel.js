@@ -68,38 +68,62 @@ gulp.task('copy', () =>
     .pipe($.size({title: 'copy'}))
 );
 
+const AUTOPREFIXER_BROWSERS = [
+  'ie >= 10',
+  'ie_mob >= 10',
+  'ff >= 30',
+  'chrome >= 34',
+  'safari >= 7',
+  'opera >= 23',
+  'ios >= 7',
+  'android >= 4.4',
+  'bb >= 10'
+];
 // Compile and automatically prefix stylesheets
 gulp.task('styles', () => {
-  const AUTOPREFIXER_BROWSERS = [
-    'ie >= 10',
-    'ie_mob >= 10',
-    'ff >= 30',
-    'chrome >= 34',
-    'safari >= 7',
-    'opera >= 23',
-    'ios >= 7',
-    'android >= 4.4',
-    'bb >= 10'
-  ];
+  const dest = '.tmp/styles';
 
   // For best performance, don't add Sass partials to `gulp.src`
   return gulp.src([
     'app/styles/**/*.scss',
     'app/styles/**/*.css'
-  ])
-    .pipe($.newer('.tmp/styles'))
+  ])    
+    // TODO: use `gulp newer` for mdl entry file to speed up.
+    // (other scss file cannot easily use this plugin since dependency must be resolved)
+    // .pipe($.newer({dest: dest, ext: '.css', extra: [/*here for many to one*/]}))
     .pipe($.sourcemaps.init())
     .pipe($.sass({
-      precision: 10
+      precision: 10,
+      includePaths: ["./node_modules/material-design-lite/src"]
     }).on('error', $.sass.logError))
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
-    .pipe(gulp.dest('.tmp/styles'))
+    .pipe($.sourcemaps.write('./'))
+    .pipe(gulp.dest(dest))
     // Concatenate and minify styles
+    /*.pipe($.if('*.css', $.cssnano()))
+    .pipe($.size({title: 'styles'}))
+    .pipe($.sourcemaps.write('./'))
+    .pipe(gulp.dest('dist/styles'));*/
+});
+
+gulp.task('styles:dist', _ => {
+  return gulp.src([
+    'app/styles/**/*.scss',
+    'app/styles/**/*.css'
+  ])
+    .pipe($.sourcemaps.init())
+    .pipe($.sass({
+      precision: 10,
+      includePaths: ["./node_modules/material-design-lite/src"]
+    }).on('error', $.sass.logError))
+    .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))    
+    // Concatenate and minify styles
+    // TODO: see if `$.if()` could be removed
     .pipe($.if('*.css', $.cssnano()))
     .pipe($.size({title: 'styles'}))
     .pipe($.sourcemaps.write('./'))
     .pipe(gulp.dest('dist/styles'));
-});
+})
 
 // Concatenate and minify JavaScript. Optionally transpiles ES2015 code to ES5.
 // to enable ES2015 support remove the line `"only": "gulpfile.babel.js",` in the
@@ -191,10 +215,10 @@ gulp.task('serve:dist', ['default'], () =>
   })
 );
 
-// Build production files, the default task
+// Build PRODUCTION files, the default task
 gulp.task('default', ['clean'], cb =>
   runSequence(
-    'styles',
+    'styles:dist',
     ['lint', 'html', 'scripts', 'images', 'copy'],
     'generate-service-worker',
     cb
