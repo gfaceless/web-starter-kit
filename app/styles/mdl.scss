@@ -1,7 +1,11 @@
+// This file is treated differently from other scss files for performance reason.
+// If its path or name is changed, gulp file should be modified accordingly.
 
-// we'd better use number instead of other form, since mdl use this monster:
+
+// variable override
+// Note we have to define color variables like this, since MDL does something like:
 // $button-primary-color: unquote("rgba(#{$palette-grey-500}, 0.20)") !default;
-
+// thus true color variable is not supported.
 $color-primary: "125,125,255"; 
 $color-primary-dark: "10,185,150"; // green
 $color-accent: "220,232,010"; // yellow
@@ -45,6 +49,6 @@ $color-accent: "220,232,010"; // yellow
 @import "shadow/shadow";
 @import "grid/grid";
 
-
- 
-// @import 'shit';
+// If more custom partials were imported here,
+// we should manually modify gulp file filling `extra` option of `gulp.newer`
+@import 'my-mdl-partial';

@@ -88,9 +88,15 @@ gulp.task('styles', () => {
     'app/styles/**/*.scss',
     'app/styles/**/*.css'
   ])    
-    // TODO: use `gulp newer` for mdl entry file to speed up.
-    // (other scss file cannot easily use this plugin since dependency must be resolved)
-    // .pipe($.newer({dest: dest, ext: '.css', extra: [/*here for many to one*/]}))
+    // We treat `mdl.scss` differenctly since it needs much more computing time.
+    // All our customized partial files must be passed to `extra` option of `gulp.newer`
+    // for `gulp.watch()` to work properly.
+    .pipe(
+      $.if('mdl.scss', // the vinyl file path.        
+        // `extra` is an array of disk file paths, here they are relative to gulp file.
+        $.newer({dest: dest, ext: '.css', extra: ["app/styles/_my-mdl-partial.scss"]})
+      )
+    )
     .pipe($.sourcemaps.init())
     .pipe($.sass({
       precision: 10,
@@ -99,11 +105,6 @@ gulp.task('styles', () => {
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
     .pipe($.sourcemaps.write('./'))
     .pipe(gulp.dest(dest))
-    // Concatenate and minify styles
-    /*.pipe($.if('*.css', $.cssnano()))
-    .pipe($.size({title: 'styles'}))
-    .pipe($.sourcemaps.write('./'))
-    .pipe(gulp.dest('dist/styles'));*/
 });
 
 gulp.task('styles:dist', _ => {
@@ -118,8 +119,7 @@ gulp.task('styles:dist', _ => {
     }).on('error', $.sass.logError))
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))    
     // Concatenate and minify styles
-    // TODO: see if `$.if()` could be removed
-    .pipe($.if('*.css', $.cssnano()))
+    .pipe($.cssnano())
     .pipe($.size({title: 'styles'}))
     .pipe($.sourcemaps.write('./'))
     .pipe(gulp.dest('dist/styles'));
